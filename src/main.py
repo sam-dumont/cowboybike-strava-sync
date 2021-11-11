@@ -98,6 +98,7 @@ def create_simple_activity(activity):
             ).isoformat(),
             "type": "EBikeRide",
             "elapsed_time": activity["moving_time"],
+            "description": f"Average motor power: {trip['average_motor_power']}W\nAverage user power: {trip['average_user_power']}W",
             "distance": round(activity["distance"] * 1000, 3),
         },
     )
@@ -216,6 +217,7 @@ if __name__ == "__main__":
                     "activity_type": "ebikeride",
                     "name": trip["title"],
                     "data_type": "tcx",
+                    "description": f"Average motor power: {trip['average_motor_power']}W\nAverage user power: {trip['average_user_power']}W",
                 }
 
                 req = requests.post(
