@@ -1,0 +1,53 @@
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: cowboybike-strava-sync
+spec:
+  schedule: "*/15 * * * *"
+  concurrencyPolicy: Forbid
+  suspend: false
+  jobTemplate:
+    spec:
+      parallelism: 1
+      completions: 1
+      backoffLimit: 0
+      manualSelector: false
+      template:
+        spec:
+          volumes:
+            - name: cowboybike-strava-sync-persistence
+              persistentVolumeClaim:
+                claimName: cowboybike-strava-sync-persistence
+            - name: cowboybike-strava-initial-token
+              secret:
+                secretName: cowboybike-strava-initial-token
+          containers:
+            - name: cowboybike-strava-sync
+              image: ghcr.io/samueldumont/cowboybike-strava-sync:latest
+              envFrom:
+                - secretRef:
+                    name: cowboybike-strava-auth
+                    optional: false
+              env:
+                - name: HOME
+                  value: /home/synchro
+                - name: STRAVA_INITIAL_SECRET_FILE_LOCATION
+                  value: /opt/strava-auth/strava-initial-auth-token
+                - name: LOG_LEVEL
+                  value: DEBUG
+                - name: COWBOY_TRIPS_DAYS
+                  value: "14"
+              resources: {}
+              volumeMounts:
+                - name: cowboybike-strava-sync-persistence
+                  mountPath: /home/synchro/.cowboybike-strava
+                  mountPropagation: None
+                - name: cowboybike-strava-initial-token
+                  mountPath: /opt/strava-auth/strava-initial-auth-token
+                  readOnly: true
+                  subPath: strava-initial-auth-token
+              imagePullPolicy: Always
+          restartPolicy: Never
+          automountServiceAccountToken: true
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 1
