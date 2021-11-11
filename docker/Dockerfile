@@ -1,6 +1,6 @@
 FROM python:3.9-alpine
 
-RUN addgroup -S synchro && adduser -S synchro -G synchro
+RUN addgroup -g 1234 -S synchro && adduser -u 1234 -G synchro -h /home/synchro -D synchro
 USER synchro
 WORKDIR /home/synchro
 
