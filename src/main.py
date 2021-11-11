@@ -145,9 +145,7 @@ if __name__ == "__main__":
                     STRAVA_CLIENT_SECRET,
                 )
             else:
-                logging.debug(
-                    f"Using the existing strava token. User {auth['athlete']['id']}"
-                )
+                logging.debug(f"Using the existing strava token.")
             auth_strava = auth
     except:
         logger.error("File does not exists, please create it first")
