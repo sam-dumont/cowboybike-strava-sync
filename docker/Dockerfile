@@ -1,5 +1,9 @@
 FROM python:3.9-alpine
 
+RUN useradd -ms /bin/bash synchro
+USER synchro
+WORKDIR /home/synchro
+
 # Copy function code
 COPY src ./src
 
