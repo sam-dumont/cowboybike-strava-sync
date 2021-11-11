@@ -44,3 +44,7 @@ Don't forget to add the `activity:write` scope to your token request. When you f
 ```
 
 Save this file at the `STRAVA_SECRET_FILE_LOCATION`. This will be refreshed if necessary and updated.
+
+## Kubernetes
+
+There are some sample kubernetes manifests that will allow you to run this sync as a cronjob. You just need to change the secrets and it will run every 15 minutes.
