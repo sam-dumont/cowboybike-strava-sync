@@ -1,6 +1,6 @@
 FROM python:3.9-alpine
 
-RUN useradd -ms /bin/bash synchro
+RUN addgroup -S synchro && adduser -S synchro -G synchro
 USER synchro
 WORKDIR /home/synchro
 
