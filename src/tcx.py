@@ -111,8 +111,8 @@ def create_tcx(activity_source, charts_source):
         start_time,
         0,
         [
-            activity_source["route"]["start"]["latitude"],
-            activity_source["route"]["start"]["longitude"],
+            charts_source["positions"][0],
+            charts_source["distances"][0],
         ],
         0,
         0,
@@ -134,8 +134,8 @@ def create_tcx(activity_source, charts_source):
         start_time,
         0,
         [
-            activity_source["route"]["end"]["latitude"],
-            activity_source["route"]["end"]["longitude"],
+            charts_source["positions"][-1],
+            charts_source["distances"][-1],
         ],
         len(charts_source["positions"]) + 1,
         0,
