@@ -170,21 +170,39 @@ if __name__ == "__main__":
     trips = []
 
     while not last_page:
-        trips_history = requests.get(
-            "https://app-api.cowboy.bike/trips",
-            json={
-                "page": page,
-                "from": start_date.strftime("%Y-%m-%dT%H:%M:%S"),
-                "to": end_date.strftime("%Y-%m-%dT%H:%M:%S"),
-            },
-            headers=BASE_HEADERS,
-        ).json()
+        try:
+            trips_history = requests.get(
+                "https://app-api.cowboy.bike/trips",
+                json={
+                    "page": page,
+                    "from": start_date.strftime("%Y-%m-%dT%H:%M:%S"),
+                    "to": end_date.strftime("%Y-%m-%dT%H:%M:%S"),
+                },
+                headers=BASE_HEADERS,
+            )
 
-        last_page = trips_history["last_page"]
-        page += 1
+            trips_history.raise_for_status()
+            status_code = trips_history.status_code
 
-        for day in trips_history["daily_summaries"]:
-            trips.extend(trips_history["daily_summaries"][day]["trips"])
+            trips_history = trips_history.json()
+
+            last_page = trips_history["last_page"]
+            page += 1
+
+            for day in trips_history["daily_summaries"]:
+                trips.extend(trips_history["daily_summaries"][day]["trips"])
+        except requests.exceptions.HTTPError as e:
+            if status_code == 401:
+                auth_cowboy = login_cowboy(
+                    COWBOY_USER_EMAIL, COWBOY_USER_PASSWORD
+                )
+                BASE_HEADERS.update(
+                    {
+                        "Client": auth_cowboy["Client"],
+                        "Uid": auth_cowboy["Uid"],
+                        "Access-Token": auth_cowboy["Access-Token"],
+                    }
+                )
 
     for trip in trips:
         if trip["uid"] not in activity_history:
