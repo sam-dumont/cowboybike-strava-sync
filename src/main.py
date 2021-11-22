@@ -182,8 +182,6 @@ if __name__ == "__main__":
             )
 
             trips_history.raise_for_status()
-            status_code = trips_history.status_code
-
             trips_history = trips_history.json()
 
             last_page = trips_history["last_page"]
@@ -192,7 +190,7 @@ if __name__ == "__main__":
             for day in trips_history["daily_summaries"]:
                 trips.extend(trips_history["daily_summaries"][day]["trips"])
         except requests.exceptions.HTTPError as e:
-            if status_code == 401:
+            if e.response.status_code == 401:
                 auth_cowboy = login_cowboy(
                     COWBOY_USER_EMAIL, COWBOY_USER_PASSWORD
                 )
