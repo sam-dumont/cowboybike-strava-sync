@@ -46,6 +46,8 @@ COWBOY_HEADERS = {
 
 TCX_EXPORT_DIRECTORY = os.getenv("TCX_EXPORT_DIRECTORY", None)
 
+UPLOAD_TO_STRAVA = os.getenv("UPLOAD_TO_STRAVA", True) in ["True", "1", True]
+
 auth_cowboy = {}
 auth_strava = {}
 
@@ -116,7 +118,8 @@ if __name__ == "__main__":
         Path(TCX_EXPORT_DIRECTORY).mkdir(parents=True, exist_ok=True)
 
     if (
-        STRAVA_INITIAL_SECRET_FILE_LOCATION is not None
+        UPLOAD_TO_STRAVA
+        and STRAVA_INITIAL_SECRET_FILE_LOCATION is not None
         and not Path(STRAVA_SECRET_FILE_LOCATION).is_file()
     ):
         shutil.copyfile(
@@ -141,21 +144,22 @@ if __name__ == "__main__":
         logger.debug("Would login")
         auth_cowboy = login_cowboy(COWBOY_USER_EMAIL, COWBOY_USER_PASSWORD)
 
-    try:
-        with open(STRAVA_SECRET_FILE_LOCATION, "r") as infile:
-            auth = json.loads(infile.read())
-            if auth["expires_at"] < int(time.time()):
-                auth = login_strava(
-                    auth["refresh_token"],
-                    STRAVA_CLIENT_ID,
-                    STRAVA_CLIENT_SECRET,
-                )
-            else:
-                logging.debug(f"Using the existing strava token.")
-            auth_strava = auth
-    except:
-        logger.error("File does not exists, please create it first")
-        exit(1)
+    if UPLOAD_TO_STRAVA:
+        try:
+            with open(STRAVA_SECRET_FILE_LOCATION, "r") as infile:
+                auth = json.loads(infile.read())
+                if auth["expires_at"] < int(time.time()):
+                    auth = login_strava(
+                        auth["refresh_token"],
+                        STRAVA_CLIENT_ID,
+                        STRAVA_CLIENT_SECRET,
+                    )
+                else:
+                    logging.debug(f"Using the existing strava token.")
+                auth_strava = auth
+        except:
+            logger.error("File does not exists, please create it first")
+            exit(1)
 
     COWBOY_HEADERS.update(
         {
@@ -235,31 +239,32 @@ if __name__ == "__main__":
                     create_simple_activity(trip)
                     break
 
-                files = {
-                    "file": (
-                        f"{trip['uid']}.tcx",
-                        open(f"/tmp/output_{trip['id']}.tcx", "rb"),
-                        "application-type",
-                    )
-                }
-                payload = {
-                    "activity_type": "ebikeride",
-                    "name": trip["title"],
-                    "data_type": "tcx",
-                    "description": f"Average motor power: {trip['average_motor_power']}W\nAverage user power: {trip['average_user_power']}W",
-                }
+                if UPLOAD_TO_STRAVA:
+                    files = {
+                        "file": (
+                            f"{trip['uid']}.tcx",
+                            open(f"/tmp/output_{trip['id']}.tcx", "rb"),
+                            "application-type",
+                        )
+                    }
+                    payload = {
+                        "activity_type": "ebikeride",
+                        "name": trip["title"],
+                        "data_type": "tcx",
+                        "description": f"Average motor power: {trip['average_motor_power']}W\nAverage user power: {trip['average_user_power']}W",
+                    }
 
-                req = requests.post(
-                    "https://www.strava.com/api/v3/uploads",
-                    headers={
-                        "Authorization": f"Bearer {auth_strava['access_token']}"
-                    },
-                    data=payload,
-                    files=files,
-                )
+                    req = requests.post(
+                        "https://www.strava.com/api/v3/uploads",
+                        headers={
+                            "Authorization": f"Bearer {auth_strava['access_token']}"
+                        },
+                        data=payload,
+                        files=files,
+                    )
 
                 os.remove(f"/tmp/output_{trip['id']}.tcx")
-            else:
+            elif UPLOAD_TO_STRAVA:
                 create_simple_activity(trip)
 
             if trip["uid"] not in activity_history:

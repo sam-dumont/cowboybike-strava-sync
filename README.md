@@ -21,6 +21,7 @@ Configuration is mostly done through environment variables.
 | `WATTS_FILTER`                        | The maximum watt power that will be considered valid                                                                                        | `1100`                              |
 | `LOG_LEVEL`                           | The logging level                                                                                                                           | `INFO`                              |
 | `TCX_EXPORT_DIRECTORY`                | If set, the directory where TCX files will be saved                                                                                         | `None`                              |
+| `UPLOAD_TO_STRAVA`                    | If true, will upload the generated TCX files to Strava                                                                                      | `True`                              |
 
 Two files are required for authentication, they will be used to store your access and refresh tokens for Strava API and Cowboy.
 
