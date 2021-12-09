@@ -20,6 +20,7 @@ Configuration is mostly done through environment variables.
 | `COWBOY_TRIPS_DAYS`                   | The number of days to fetch                                                                                                                 | `7`                                 |
 | `WATTS_FILTER`                        | The maximum watt power that will be considered valid                                                                                        | `1100`                              |
 | `LOG_LEVEL`                           | The logging level                                                                                                                           | `INFO`                              |
+| `TCX_EXPORT_DIRECTORY`                | If set, the directory where TCX files will be saved                                                                                         | `None`                              |
 
 Two files are required for authentication, they will be used to store your access and refresh tokens for Strava API and Cowboy.
 
