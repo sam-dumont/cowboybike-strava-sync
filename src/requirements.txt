@@ -4,7 +4,7 @@
 dill == 0.3.4
 
 # src/tcx.py: 1
-lxml == 4.6.4
+lxml == 4.6.5
 
 # src/main.py: 8
 # src/tcx.py: 2
