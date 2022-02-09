@@ -3,7 +3,7 @@ import os
 import json
 import time
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from tcx import create_tcx
 from dateutil import parser
 from pathlib import Path
@@ -195,7 +195,8 @@ if __name__ == "__main__":
 
     for trip in trips:
         if trip["uid"] not in activity_history and (
-            datetime.now() > parser.parse(trip["started_at"]) + timedelta(minutes=30)
+            datetime.now(tz=timezone.utc)
+            > parser.parse(trip["started_at"]).astimezone(timezone.utc) + timedelta(minutes=30)
         ):
             logger.info(f"Processing trip {trip['id']}")
             if trip["has_dashboard_data"]:
