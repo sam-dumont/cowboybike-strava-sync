@@ -18,22 +18,14 @@ STRAVA_CLIENT_SECRET = os.getenv("STRAVA_CLIENT_SECRET", "NONE")
 COWBOY_USER_EMAIL = os.getenv("COWBOY_USER_EMAIL", "NONE")
 COWBOY_USER_PASSWORD = os.getenv("COWBOY_USER_PASSWORD", "NONE")
 
-PERSISTENCE_LOCATION = os.getenv(
-    "PERSISTENCE_LOCATION", f"{os.path.expanduser('~')}/.cowboybike-strava"
-)
+PERSISTENCE_LOCATION = os.getenv("PERSISTENCE_LOCATION", f"{os.path.expanduser('~')}/.cowboybike-strava")
 
 PERSISTENCE_FILE = f"{PERSISTENCE_LOCATION}/activity-history"
 
-STRAVA_SECRET_FILE_LOCATION = os.getenv(
-    "STRAVA_SECRET_FILE_LOCATION", f"{PERSISTENCE_LOCATION}/strava-token"
-)
-COWBOY_SECRET_FILE_LOCATION = os.getenv(
-    "COWBOY_SECRET_FILE_LOCATION", f"{PERSISTENCE_LOCATION}/cowboy-token"
-)
+STRAVA_SECRET_FILE_LOCATION = os.getenv("STRAVA_SECRET_FILE_LOCATION", f"{PERSISTENCE_LOCATION}/strava-token")
+COWBOY_SECRET_FILE_LOCATION = os.getenv("COWBOY_SECRET_FILE_LOCATION", f"{PERSISTENCE_LOCATION}/cowboy-token")
 
-STRAVA_INITIAL_SECRET_FILE_LOCATION = os.getenv(
-    "STRAVA_INITIAL_SECRET_FILE_LOCATION", None
-)
+STRAVA_INITIAL_SECRET_FILE_LOCATION = os.getenv("STRAVA_INITIAL_SECRET_FILE_LOCATION", None)
 
 COWBOY_TRIPS_DAYS = int(os.getenv("COWBOY_TRIPS_DAYS", 7))
 
@@ -97,9 +89,7 @@ def create_simple_activity(activity):
         headers={"Authorization": f"Bearer {auth_strava['access_token']}"},
         json={
             "name": activity["title"],
-            "start_date_local": parser.parse(
-                activity["started_at"]
-            ).isoformat(),
+            "start_date_local": parser.parse(activity["started_at"]).isoformat(),
             "type": "EBikeRide",
             "elapsed_time": activity["moving_time"],
             "description": f"Average motor power: {trip['average_motor_power']}W\nAverage user power: {trip['average_user_power']}W",
@@ -122,9 +112,7 @@ if __name__ == "__main__":
         and STRAVA_INITIAL_SECRET_FILE_LOCATION is not None
         and not Path(STRAVA_SECRET_FILE_LOCATION).is_file()
     ):
-        shutil.copyfile(
-            STRAVA_INITIAL_SECRET_FILE_LOCATION, STRAVA_SECRET_FILE_LOCATION
-        )
+        shutil.copyfile(STRAVA_INITIAL_SECRET_FILE_LOCATION, STRAVA_SECRET_FILE_LOCATION)
 
     try:
         activity_history = pickle.load(open(PERSISTENCE_FILE, "rb"))
@@ -136,9 +124,7 @@ if __name__ == "__main__":
             auth = json.loads(infile.read())
             if auth["Expiry"] < int(time.time()):
                 raise Exception("Token expired")
-            logging.debug(
-                f"Using the existing cowboy token. User {auth['Uid']}"
-            )
+            logging.debug(f"Using the existing cowboy token. User {auth['Uid']}")
             auth_cowboy = auth
     except:
         logger.debug("Would login")
@@ -169,9 +155,7 @@ if __name__ == "__main__":
         }
     )
 
-    end_date = datetime.now().replace(
-        hour=0, minute=0, second=0, microsecond=0
-    ) + timedelta(days=1)
+    end_date = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0) + timedelta(days=1)
     start_date = end_date - timedelta(days=COWBOY_TRIPS_DAYS)
 
     last_page = False
@@ -200,9 +184,7 @@ if __name__ == "__main__":
                 trips.extend(trips_history["daily_summaries"][day]["trips"])
         except requests.exceptions.HTTPError as e:
             if e.response.status_code == 401:
-                auth_cowboy = login_cowboy(
-                    COWBOY_USER_EMAIL, COWBOY_USER_PASSWORD
-                )
+                auth_cowboy = login_cowboy(COWBOY_USER_EMAIL, COWBOY_USER_PASSWORD)
                 COWBOY_HEADERS.update(
                     {
                         "Client": auth_cowboy["Client"],
@@ -212,7 +194,9 @@ if __name__ == "__main__":
                 )
 
     for trip in trips:
-        if trip["uid"] not in activity_history:
+        if trip["uid"] not in activity_history and (
+            datetime.now() > parser.parse(trip["started_at"]) + timedelta(minutes=30)
+        ):
             logger.info(f"Processing trip {trip['id']}")
             if trip["has_dashboard_data"]:
                 try:
@@ -256,9 +240,7 @@ if __name__ == "__main__":
 
                     req = requests.post(
                         "https://www.strava.com/api/v3/uploads",
-                        headers={
-                            "Authorization": f"Bearer {auth_strava['access_token']}"
-                        },
+                        headers={"Authorization": f"Bearer {auth_strava['access_token']}"},
                         data=payload,
                         files=files,
                     )
@@ -270,8 +252,6 @@ if __name__ == "__main__":
             if trip["uid"] not in activity_history:
                 activity_history.append(trip["uid"])
         else:
-            logger.info(
-                f"Activity {trip['uid']} already processed, nothing to do"
-            )
+            logger.info(f"Activity {trip['uid']} already processed, nothing to do")
 
     pickle.dump(sorted(activity_history), open(PERSISTENCE_FILE, "wb"))
