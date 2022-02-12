@@ -194,10 +194,9 @@ if __name__ == "__main__":
                 )
 
     for trip in trips:
-        if trip["uid"] not in activity_history and (
-            datetime.now(tz=timezone.utc)
-            > parser.parse(trip["started_at"]).astimezone(timezone.utc) + timedelta(minutes=30)
-        ):
+        if trip["uid"] not in activity_history and datetime.now(tz=timezone.utc) > parser.parse(
+            trip["started_at"]
+        ).astimezone(timezone.utc) + timedelta(minutes=40):
             logger.info(f"Processing trip {trip['id']}")
             if trip["has_dashboard_data"]:
                 try:
@@ -221,7 +220,10 @@ if __name__ == "__main__":
                         except Exception as e:
                             logger.error(e)
                 except:
-                    create_simple_activity(trip)
+                    if datetime.now(tz=timezone.utc) > parser.parse(trip["started_at"]).astimezone(
+                        timezone.utc
+                    ) + timedelta(days=1):
+                        create_simple_activity(trip)
                     break
 
                 if UPLOAD_TO_STRAVA:
@@ -247,7 +249,9 @@ if __name__ == "__main__":
                     )
 
                 os.remove(f"/tmp/output_{trip['id']}.tcx")
-            elif UPLOAD_TO_STRAVA:
+            elif UPLOAD_TO_STRAVA and datetime.now(tz=timezone.utc) > parser.parse(trip["started_at"]).astimezone(
+                timezone.utc
+            ) + timedelta(days=1):
                 create_simple_activity(trip)
 
             if trip["uid"] not in activity_history:
