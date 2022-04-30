@@ -9,6 +9,11 @@ from dateutil import parser
 from pathlib import Path
 import dill as pickle
 import shutil
+import argparse
+
+argparser = argparse.ArgumentParser()
+argparser.add_argument("--activity", help="reupload specific activity")
+args = argparser.parse_args()
 
 logger = logging.getLogger()
 logger.setLevel(os.getenv("LOG_LEVEL", "INFO"))
@@ -17,6 +22,7 @@ STRAVA_CLIENT_ID = os.getenv("STRAVA_CLIENT_ID", "NONE")
 STRAVA_CLIENT_SECRET = os.getenv("STRAVA_CLIENT_SECRET", "NONE")
 COWBOY_USER_EMAIL = os.getenv("COWBOY_USER_EMAIL", "NONE")
 COWBOY_USER_PASSWORD = os.getenv("COWBOY_USER_PASSWORD", "NONE")
+DELAY = int(os.getenv("DELAY", 30))
 
 PERSISTENCE_LOCATION = os.getenv("PERSISTENCE_LOCATION", f"{os.path.expanduser('~')}/.cowboybike-strava")
 
@@ -162,10 +168,14 @@ if __name__ == "__main__":
     page = 1
     trips = []
 
+    trips_url = (
+        f"https://app-api.cowboy.bike/trips/{args.activity}" if args.activity else "https://app-api.cowboy.bike/trips"
+    )
+
     while not last_page:
         try:
             trips_history = requests.get(
-                "https://app-api.cowboy.bike/trips",
+                trips_url,
                 json={
                     "page": page,
                     "from": start_date.strftime("%Y-%m-%dT%H:%M:%S"),
@@ -177,11 +187,14 @@ if __name__ == "__main__":
             trips_history.raise_for_status()
             trips_history = trips_history.json()
 
-            last_page = trips_history["last_page"]
+            last_page = args.activity or trips_history["last_page"]
             page += 1
 
-            for day in trips_history["daily_summaries"]:
-                trips.extend(trips_history["daily_summaries"][day]["trips"])
+            if args.activity:
+                trips.extend([trips_history])
+            else:
+                for day in trips_history["daily_summaries"]:
+                    trips.extend(trips_history["daily_summaries"][day]["trips"])
         except requests.exceptions.HTTPError as e:
             if e.response.status_code == 401:
                 auth_cowboy = login_cowboy(COWBOY_USER_EMAIL, COWBOY_USER_PASSWORD)
@@ -194,9 +207,11 @@ if __name__ == "__main__":
                 )
 
     for trip in trips:
-        if trip["uid"] not in activity_history and datetime.now(tz=timezone.utc) > parser.parse(
-            trip["started_at"]
-        ).astimezone(timezone.utc) + timedelta(minutes=40):
+        if (
+            trip["uid"] not in activity_history or (args.activity and int(args.activity) == int(trip["id"]))
+        ) and datetime.now(tz=timezone.utc) > parser.parse(trip["ended_at"]).astimezone(timezone.utc) + timedelta(
+            minutes=DELAY
+        ):
             logger.info(f"Processing trip {trip['id']}")
             if trip["has_dashboard_data"]:
                 try:
@@ -204,6 +219,9 @@ if __name__ == "__main__":
                         f"https://app-api.cowboy.bike/trips/{trip['id']}/charts",
                         headers=COWBOY_HEADERS,
                     ).json()
+
+                    if len(trip_charts["durations"]) <= 0.95 * trip["unlocked_time"]:
+                        raise ValueError("Not the full trip data")
                     tcx = create_tcx(trip, trip_charts)
                     tcx.write(
                         f"/tmp/output_{trip['id']}.tcx",
