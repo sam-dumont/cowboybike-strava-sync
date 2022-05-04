@@ -22,7 +22,7 @@ Configuration is mostly done through environment variables.
 | `LOG_LEVEL`                           | The logging level                                                                                                                           | `INFO`                              |
 | `TCX_EXPORT_DIRECTORY`                | If set, the directory where TCX files will be saved                                                                                         | `None`                              |
 | `UPLOAD_TO_STRAVA`                    | If true, will upload the generated TCX files to Strava                                                                                      | `True`                              |
-| `DELAY`                               | The time to wait before starting to process the activity                                                                                    | `True`                              |
+| `DELAY`                               | The time to wait before starting to process the activity                                                                                    | `30`                                |
 
 Two files are required for authentication, they will be used to store your access and refresh tokens for Strava API and Cowboy.
 
