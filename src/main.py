@@ -269,7 +269,7 @@ if __name__ == "__main__":
                 os.remove(f"/tmp/output_{trip['id']}.tcx")
             elif UPLOAD_TO_STRAVA and datetime.now(tz=timezone.utc) > parser.parse(trip["started_at"]).astimezone(
                 timezone.utc
-            ) + timedelta(days=1):
+            ) + timedelta(days=max(COWBOY_TRIPS_DAYS - 1, 1)):
                 create_simple_activity(trip)
 
             if trip["uid"] not in activity_history:
