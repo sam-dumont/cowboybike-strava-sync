@@ -104,6 +104,7 @@ def create_simple_activity(activity):
     )
     if req.status_code == 409:
         logger.info("Activity already exists")
+    return req.status_code < 300
 
 
 if __name__ == "__main__":
@@ -212,6 +213,7 @@ if __name__ == "__main__":
         ) and datetime.now(tz=timezone.utc) > parser.parse(trip["ended_at"]).astimezone(timezone.utc) + timedelta(
             minutes=DELAY
         ):
+            success = False
             logger.info(f"Processing trip {trip['id']}")
             if trip["has_dashboard_data"]:
                 try:
@@ -265,14 +267,16 @@ if __name__ == "__main__":
                         data=payload,
                         files=files,
                     )
+                    if req.status_code < 300:
+                        success = True
 
                 os.remove(f"/tmp/output_{trip['id']}.tcx")
             elif UPLOAD_TO_STRAVA and datetime.now(tz=timezone.utc) > parser.parse(trip["started_at"]).astimezone(
                 timezone.utc
             ) + timedelta(days=max(COWBOY_TRIPS_DAYS - 1, 1)):
-                create_simple_activity(trip)
+                success = create_simple_activity(trip)
 
-            if trip["uid"] not in activity_history:
+            if success and trip["uid"] not in activity_history:
                 activity_history.append(trip["uid"])
         else:
             logger.info(f"Activity {trip['uid']} already processed, nothing to do")
