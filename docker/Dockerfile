@@ -1,4 +1,4 @@
-FROM python:3.9-alpine
+FROM python:3.13.0a3-alpine
 
 RUN addgroup -g 1234 -S synchro && adduser -u 1234 -G synchro -h /home/synchro -D synchro
 USER synchro
